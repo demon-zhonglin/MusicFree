@@ -1,0 +1,39 @@
+{
+  "routerMap": [
+    {
+      "name": "Home",
+      "pageSourceFile": "src/main/ets/pages/Home.ets",
+      "buildFunction": "HomeBuilder"
+    },
+    {
+      "name": "MusicDetail",
+      "pageSourceFile": "src/main/ets/pages/MusicDetail.ets",
+      "buildFunction": "MusicDetailBuilder"
+    },
+    {
+      "name": "Search",
+      "pageSourceFile": "src/main/ets/pages/Search.ets",
+      "buildFunction": "SearchBuilder"
+    },
+    {
+      "name": "Setting",
+      "pageSourceFile": "src/main/ets/pages/Setting.ets",
+      "buildFunction": "SettingBuilder"
+    },
+    {
+      "name": "LocalSheetDetail",
+      "pageSourceFile": "src/main/ets/pages/SheetDetail.ets",
+      "buildFunction": "SheetDetailBuilder"
+    },
+    {
+      "name": "History",
+      "pageSourceFile": "src/main/ets/pages/History.ets",
+      "buildFunction": "HistoryBuilder"
+    },
+    {
+      "name": "PluginManager",
+      "pageSourceFile": "src/main/ets/pages/PluginManager.ets",
+      "buildFunction": "PluginManagerBuilder"
+    }
+  ]
+}

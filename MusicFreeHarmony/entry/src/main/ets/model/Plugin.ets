@@ -2,10 +2,10 @@
 export class Plugin {
   name: string = ''
   platform: string = ''
-  version?: string
-  srcUrl?: string
-  author?: string
-  description?: string
+  version: string = ''
+  srcUrl: string = ''
+  author: string = ''
+  description: string = ''
   hash: string = ''
   enabled: boolean = true
   order: number = 0

@@ -1,0 +1,324 @@
+import { TrackPlayerVM, getTrackPlayerVM } from '../viewmodel/TrackPlayerVM'
+import { MusicSheetVM, getMusicSheetVM } from '../viewmodel/MusicSheetVM'
+import { MusicImage } from '../components/base/MusicImage'
+import { IconButton, IconButtonFilled } from '../components/base/IconButton'
+import { MusicRepeatMode } from '../constants/CommonConst'
+import { SheetOption } from '../constants/RouteConst'
+
+@Builder
+export function MusicDetailBuilder() {
+  MusicDetail()
+}
+
+@Entry
+@Component
+struct MusicDetail {
+  @State playerVM: TrackPlayerVM = getTrackPlayerVM()
+  @State sheetVM: MusicSheetVM = getMusicSheetVM()
+  @State showLyric: boolean = false
+  @State isFavorite: boolean = false
+  @State rotationAngle: number = 0
+  private navPathStack: NavPathStack = new NavPathStack()
+  private rotationTimer: number = -1
+
+  aboutToAppear(): void {
+    this.checkFavorite()
+    this.startRotation()
+  }
+
+  aboutToDisappear(): void {
+    this.stopRotation()
+  }
+
+  async checkFavorite(): Promise<void> {
+    if (this.playerVM.currentMusic) {
+      this.isFavorite = await this.sheetVM.isFavorite(this.playerVM.currentMusic)
+    }
+  }
+
+  startRotation(): void {
+    if (this.rotationTimer === -1) {
+      this.rotationTimer = setInterval(() => {
+        if (this.playerVM.isPlaying && !this.showLyric) {
+          this.rotationAngle = (this.rotationAngle + 1) % 360
+        }
+      }, 50)
+    }
+  }
+
+  stopRotation(): void {
+    if (this.rotationTimer !== -1) {
+      clearInterval(this.rotationTimer)
+      this.rotationTimer = -1
+    }
+  }
+
+  getRepeatModeIcon(): Resource {
+    switch (this.playerVM.repeatMode) {
+      case MusicRepeatMode.SINGLE:
+        return $r('app.media.ic_repeat_one')
+      case MusicRepeatMode.SHUFFLE:
+        return $r('app.media.ic_shuffle')
+      default:
+        return $r('app.media.ic_repeat')
+    }
+  }
+
+  formatTime(ms: number): string {
+    const totalSeconds = Math.floor(ms / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  build() {
+    NavDestination() {
+      Column() {
+        // 顶部栏
+        Row() {
+          IconButton({
+            icon: $r('app.media.ic_arrow_down'),
+            iconSize: 24,
+            onButtonClick: () => {
+              this.navPathStack.pop()
+            }
+          })
+
+          Column() {
+            Text(this.playerVM.currentMusic?.title ?? '未在播放')
+              .fontSize(16)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.text_primary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+            Text(this.playerVM.currentMusic?.artist ?? '')
+              .fontSize(12)
+              .fontColor($r('app.color.text_secondary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .margin({ top: 2 })
+          }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Center)
+
+          IconButton({
+            icon: $r('app.media.ic_more'),
+            iconSize: 24,
+            onButtonClick: () => {
+              this.showMoreMenu()
+            }
+          })
+        }
+        .width('100%')
+        .padding({ left: 8, right: 8, top: 16 })
+
+        // 封面/歌词切换区域
+        Column() {
+          if (this.showLyric) {
+            // 歌词显示区域
+            Column() {
+              Text('暂无歌词')
+                .fontSize(16)
+                .fontColor($r('app.color.text_hint'))
+            }
+            .width('100%')
+            .height('100%')
+            .justifyContent(FlexAlign.Center)
+          } else {
+            // 旋转的唱片封面
+            Stack() {
+              // 唱片背景
+              Circle()
+                .width(300)
+                .height(300)
+                .fill($r('app.color.text_primary'))
+                .opacity(0.1)
+
+              // 封面图片
+              MusicImage({
+                src: this.playerVM.currentMusic !== null ? this.playerVM.currentMusic.artwork : '',
+                imageSize: 260,
+                radius: 130
+              })
+              .rotate({ angle: this.rotationAngle })
+              .animation({
+                duration: 0
+              })
+
+              // 中心圆点
+              Circle()
+                .width(40)
+                .height(40)
+                .fill($r('app.color.background'))
+            }
+            .width(300)
+            .height(300)
+          }
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+        .onClick(() => {
+          this.showLyric = !this.showLyric
+        })
+
+        // 操作按钮行
+        Row() {
+          IconButton({
+            icon: this.isFavorite ? $r('app.media.ic_favorite_filled') : $r('app.media.ic_favorite'),
+            iconSize: 24,
+            color: this.isFavorite ? $r('app.color.error') : $r('app.color.text_secondary'),
+            onButtonClick: async () => {
+              if (this.playerVM.currentMusic) {
+                this.isFavorite = await this.sheetVM.toggleFavorite(this.playerVM.currentMusic)
+              }
+            }
+          })
+
+          IconButton({
+            icon: $r('app.media.ic_download'),
+            iconSize: 24,
+            color: $r('app.color.text_secondary'),
+            onButtonClick: () => {
+              // TODO: 下载
+            }
+          })
+
+          IconButton({
+            icon: $r('app.media.ic_comment'),
+            iconSize: 24,
+            color: $r('app.color.text_secondary'),
+            onButtonClick: () => {
+              // TODO: 评论
+            }
+          })
+
+          IconButton({
+            icon: $r('app.media.ic_share'),
+            iconSize: 24,
+            color: $r('app.color.text_secondary'),
+            onButtonClick: () => {
+              // TODO: 分享
+            }
+          })
+        }
+        .width('100%')
+        .justifyContent(FlexAlign.SpaceAround)
+        .padding({ left: 32, right: 32 })
+        .margin({ bottom: 16 })
+
+        // 进度条
+        Column() {
+          Slider({
+            value: this.playerVM.progress * 100,
+            min: 0,
+            max: 100,
+            style: SliderStyle.OutSet
+          })
+          .selectedColor($r('app.color.primary'))
+          .trackColor($r('app.color.divider'))
+          .blockColor($r('app.color.primary'))
+          .onChange((value: number, mode: SliderChangeMode) => {
+            if (mode === SliderChangeMode.End) {
+              this.playerVM.seekToPercent(value / 100)
+            }
+          })
+
+          Row() {
+            Text(this.playerVM.formattedPosition)
+              .fontSize(12)
+              .fontColor($r('app.color.text_hint'))
+
+            Blank()
+
+            Text(this.playerVM.formattedDuration)
+              .fontSize(12)
+              .fontColor($r('app.color.text_hint'))
+          }
+          .width('100%')
+          .margin({ top: -4 })
+        }
+        .width('100%')
+        .padding({ left: 24, right: 24 })
+
+        // 控制按钮
+        Row() {
+          IconButton({
+            icon: this.getRepeatModeIcon(),
+            iconSize: 24,
+            color: $r('app.color.text_secondary'),
+            onButtonClick: () => {
+              this.playerVM.cycleRepeatMode()
+            }
+          })
+
+          IconButton({
+            icon: $r('app.media.ic_skip_previous'),
+            iconSize: 32,
+            onButtonClick: () => {
+              this.playerVM.skipToPrevious()
+            }
+          })
+
+          // 播放/暂停按钮
+          IconButtonFilled({
+            icon: this.playerVM.isPlaying ? $r('app.media.ic_pause') : $r('app.media.ic_play'),
+            iconSize: 32,
+            buttonPadding: 16,
+            onButtonClick: () => {
+              this.playerVM.togglePlay()
+            }
+          })
+
+          IconButton({
+            icon: $r('app.media.ic_skip_next'),
+            iconSize: 32,
+            onButtonClick: () => {
+              this.playerVM.skipToNext()
+            }
+          })
+
+          IconButton({
+            icon: $r('app.media.ic_playlist'),
+            iconSize: 24,
+            color: $r('app.color.text_secondary'),
+            onButtonClick: () => {
+              this.showPlaylist()
+            }
+          })
+        }
+        .width('100%')
+        .justifyContent(FlexAlign.SpaceAround)
+        .padding({ left: 16, right: 16, top: 16, bottom: 32 })
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor($r('app.color.background'))
+    }
+    .hideTitleBar(true)
+    .onBackPressed(() => {
+      this.navPathStack.pop()
+      return true
+    })
+  }
+
+  showMoreMenu(): void {
+    const sheets: SheetOption[] = []
+    sheets.push(SheetOption.create('添加到歌单', () => {}))
+    sheets.push(SheetOption.create('查看专辑', () => {}))
+    sheets.push(SheetOption.create('查看艺术家', () => {}))
+    sheets.push(SheetOption.create('定时关闭', () => {}))
+
+    ActionSheet.show({
+      title: '更多操作',
+      message: '请选择操作',
+      sheets: sheets,
+      cancel: () => {}
+    })
+  }
+
+  showPlaylist(): void {
+    // TODO: 显示播放列表
+  }
+}

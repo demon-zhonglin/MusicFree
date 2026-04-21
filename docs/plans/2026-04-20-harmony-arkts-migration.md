@@ -8,19 +8,113 @@
 
 ## 📊 执行进度跟踪
 
-**最后更新:** 2026-04-20 19:26
+**最后更新:** 2026-04-21 13:35
 
 | Phase | Task | 状态 | 完成时间 | 备注 |
 |-------|------|------|----------|------|
 | Phase 1 | Task 1.1: 创建项目框架 | ✅ 完成 | 2026-04-20 | DevEco Studio 创建 |
 | Phase 1 | Task 1.2: 创建数据模型层 | ✅ 完成 | 2026-04-20 | 5 个模型文件 |
 | Phase 1 | Task 1.3: 创建常量和工具类 | ✅ 完成 | 2026-04-20 | 4 个工具文件 |
-| Phase 2 | Task 2.1: 实现 AVPlayer 播放服务 | ⏳ 待执行 | - | 下一批次 |
-| Phase 2 | Task 2.2: 实现 AVSession 后台控制 | ⏳ 待执行 | - | - |
-| Phase 2 | Task 2.3: 实现插件引擎 | ⏳ 待执行 | - | - |
-| Phase 3 | UI 组件层 | ⏳ 待执行 | - | - |
-| Phase 4 | 页面开发 | ⏳ 待执行 | - | - |
-| Phase 5 | 高级功能 | ⏳ 待执行 | - | - |
+| Phase 2 | Task 2.1: 实现 AVPlayer 播放服务 | ✅ 完成 | 2026-04-21 | PlaybackService + TrackPlayerVM |
+| Phase 2 | Task 2.2: 实现插件引擎 | ✅ 完成 | 2026-04-21 | PluginEngine + PluginManagerVM |
+| Phase 2 | Task 2.3: 实现歌单管理服务 | ✅ 完成 | 2026-04-21 | MusicSheetService + MusicSheetVM |
+| Phase 3 | Task 3.1: 实现基础组件 | ✅ 完成 | 2026-04-21 | 5 个基础组件 |
+| Phase 3 | Task 3.2: 实现音乐组件 | ✅ 完成 | 2026-04-21 | 3 个音乐组件 |
+| Phase 3 | Task 3.3: 实现首页 | ✅ 完成 | 2026-04-21 | Home.ets |
+| Phase 3 | Task 3.4: 实现播放详情页 | ✅ 完成 | 2026-04-21 | MusicDetail.ets |
+| Phase 3 | Task 3.5: 实现搜索页 | ✅ 完成 | 2026-04-21 | Search.ets |
+| Phase 4 | Task 4.1: 实现设置页 | ✅ 完成 | 2026-04-21 | Setting.ets |
+| Phase 4 | Task 4.2: 实现歌单详情页 | ✅ 完成 | 2026-04-21 | SheetDetail.ets |
+| Phase 4 | Task 4.3: 实现播放历史页 | ✅ 完成 | 2026-04-21 | History.ets |
+| Phase 4 | Task 4.4: 实现插件管理页 | ✅ 完成 | 2026-04-21 | PluginManager.ets |
+| Phase 4 | Task 4.5: 资源与配置文件 | ✅ 完成 | 2026-04-21 | 路由/图标/Ability |
+| **ArkTS** | **ArkTS 严格模式适配** | ✅ 完成 | 2026-04-21 | 详见下方 |
+| Phase 5 | 测试与优化 | ⏳ 待执行 | - | - |
+
+### ArkTS 严格模式适配记录 (2026-04-21)
+
+在编译过程中遇到多个 ArkTS 严格模式限制，以下是修复记录：
+
+| 错误代码 | 问题描述 | 修复方案 | 影响文件 |
+|----------|----------|----------|----------|
+| `arkts-no-symbol` | `Symbol()` API 不支持 | 改为字符串常量 | `CommonConst.ets` |
+| `arkts-no-obj-literals-as-types` | 对象字面量不能作为类型 | 定义显式类 | `MusicItem.ets`, `MusicSheetVM.ets` |
+| `arkts-no-untyped-obj-literals` | 未类型化的对象字面量 | 使用类实例替代 | `PlaybackService.ets`, `Setting.ets` 等 |
+| `arkts-no-noninferrable-arr-literals` | 数组字面量类型不可推断 | 定义 `SheetOption` 类 | 所有使用 ActionSheet 的页面 |
+| Property 'size' conflict | 属性名与内置方法冲突 | 重命名为 `imageSize`/`iconSize` | `MusicImage.ets`, `IconButton.ets` |
+| `backgroundTaskManager` API | 参数类型不匹配 | 添加 wantAgent 参数 | `PlaybackService.ets` |
+| `emitter` API | 事件 ID 必须为数字 | 改为数字常量 + `InnerEvent` | `PlaybackService.ets`, `TrackPlayerVM.ets` |
+
+#### 关键代码模式变更
+
+**1. 数据模型：从 `interface` + `Partial<T>` 改为 `class` + `static fromJson()`**
+```typescript
+// ❌ 旧模式 (不兼容)
+interface IMediaBase { id: string; platform: string }
+export class MusicItem implements IMediaBase {
+  constructor(data?: Partial<MusicItem>) { Object.assign(this, data) }
+}
+
+// ✅ 新模式 (ArkTS 兼容)
+export class MediaBase { id: string = ''; platform: string = '' }
+export class MusicItem extends MediaBase {
+  constructor() { super() }
+  static fromJson(data: Record<string, Object>): MusicItem { ... }
+}
+```
+
+**2. 事件系统：使用 `emitter.InnerEvent` + 数字 ID**
+```typescript
+// ❌ 旧模式
+emitter.emit({ eventId: 'stateChanged' }, { data: state })
+
+// ✅ 新模式
+export class PlaybackEvents {
+  static readonly STATE_CHANGED: number = 1001
+}
+const innerEvent: emitter.InnerEvent = { eventId: PlaybackEvents.STATE_CHANGED }
+const eventData: emitter.EventData = { data: new Map([['state', state]]) }
+emitter.emit(innerEvent, eventData)
+```
+
+**3. 组件属性：避免与内置属性冲突**
+```typescript
+// ❌ 冲突的属性名
+@Prop size: number = 24  // 与 CustomComponent.size() 冲突
+
+// ✅ 重命名属性
+@Prop iconSize: number = 24
+@Prop imageSize: number = 48
+@Prop buttonPadding: number = 8
+```
+
+**4. ActionSheet：使用类型化的选项类**
+```typescript
+// ❌ 对象字面量数组
+sheets: [{ title: '选项', action: () => {} }]
+
+// ✅ 类型化数组
+export class SheetOption {
+  title: string = ''
+  action: () => void = () => {}
+  static create(title: string, action: () => void): SheetOption { ... }
+}
+const sheets: SheetOption[] = []
+sheets.push(SheetOption.create('选项', () => {}))
+```
+
+**5. 路由参数：使用显式参数类**
+```typescript
+// ❌ 对象字面量
+navPathStack.pushPathByName('SheetDetail', { sheetId: '123' })
+
+// ✅ 参数类
+export class SheetDetailRouteParam {
+  sheetId: string = ''
+  static create(sheetId: string): SheetDetailRouteParam { ... }
+}
+navPathStack.pushPathByName('SheetDetail', SheetDetailRouteParam.create('123'))
+```
 
 ### 已创建文件清单
 
@@ -38,6 +132,53 @@
 **工具类 (`entry/src/main/ets/utils/`):**
 - [x] `StorageUtil.ets` - 持久化存储工具
 - [x] `NetworkUtil.ets` - 网络请求工具
+
+**服务层 (`entry/src/main/ets/service/`):**
+- [x] `PlaybackService.ets` - AVPlayer 播放服务 (含 AVSession 后台控制)
+- [x] `PluginEngine.ets` - 插件引擎 (Worker 隔离执行 JS 插件)
+- [x] `MusicSheetService.ets` - 歌单管理服务 (RDB 数据库存储)
+
+**ViewModel 层 (`entry/src/main/ets/viewmodel/`):**
+- [x] `TrackPlayerVM.ets` - 播放器状态管理 ViewModel
+- [x] `PluginManagerVM.ets` - 插件管理 ViewModel
+- [x] `MusicSheetVM.ets` - 歌单管理 ViewModel
+
+**基础组件 (`entry/src/main/ets/components/base/`):**
+- [x] `AppBar.ets` - 顶部导航栏
+- [x] `IconButton.ets` - 图标按钮 (含 Filled 变体)
+- [x] `MusicImage.ets` - 音乐封面图 (含 Circle 变体)
+- [x] `Empty.ets` - 空状态组件 (含 Action 变体)
+- [x] `Chip.ets` - 标签组件 (含 ChipGroup)
+
+**音乐组件 (`entry/src/main/ets/components/music/`):**
+- [x] `MusicItemView.ets` - 音乐列表项 (含 Compact 变体)
+- [x] `MusicList.ets` - 音乐列表 (含 Header 变体)
+- [x] `MusicBar.ets` - 底部播放栏
+
+**资源文件 (`entry/src/main/resources/`):**
+- [x] `base/element/color.json` - 颜色资源定义
+
+**页面 (`entry/src/main/ets/pages/`):**
+- [x] `Home.ets` - 首页 (歌单列表、快捷入口、底部播放栏)
+- [x] `MusicDetail.ets` - 播放详情页 (旋转封面、进度条、控制按钮)
+- [x] `Search.ets` - 搜索页 (多平台搜索、历史记录)
+- [x] `Setting.ets` - 设置页 (播放/下载/外观/插件/存储/关于)
+- [x] `SheetDetail.ets` - 歌单详情页 (歌单信息、播放全部、音乐列表)
+- [x] `History.ets` - 播放历史页 (历史列表、清空)
+- [x] `PluginManager.ets` - 插件管理页 (插件列表、导入/卸载)
+
+**入口与配置 (`entry/src/main/ets/entryability/`):**
+- [x] `EntryAbility.ets` - 应用入口 Ability (服务初始化、沉浸式状态栏)
+
+**资源文件 (`entry/src/main/resources/base/`):**
+- [x] `element/color.json` - 颜色资源 (16 种颜色)
+- [x] `element/string.json` - 字符串资源
+- [x] `profile/main_pages.json` - 页面配置
+- [x] `profile/router_map.json` - 路由映射配置
+- [x] `media/*.svg` - 图标资源 (27 个 SVG 图标)
+
+**模块配置:**
+- [x] `module.json5` - 模块配置 (权限、后台模式、路由)
 
 ---
 

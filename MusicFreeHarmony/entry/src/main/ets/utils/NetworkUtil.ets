@@ -1,44 +1,42 @@
 import { http } from '@kit.NetworkKit'
 import { BusinessError } from '@kit.BasicServicesKit'
 
-export interface RequestOptions {
-  method?: http.RequestMethod
-  headers?: Record<string, string>
-  extraData?: string | Object
-  connectTimeout?: number
-  readTimeout?: number
+export class RequestOptions {
+  method: http.RequestMethod = http.RequestMethod.GET
+  headers: Map<string, string> = new Map()
+  extraData: string = ''
+  connectTimeout: number = 10000
+  readTimeout: number = 10000
 }
 
-export interface ResponseData<T = unknown> {
-  code: number
-  data: T
-  message?: string
+export class ResponseData {
+  code: number = 0
+  data: string = ''
+  message: string = ''
 }
 
 class NetworkUtil {
-  private httpRequest: http.HttpRequest
+  private httpRequest: http.HttpRequest = http.createHttp()
 
-  constructor() {
-    this.httpRequest = http.createHttp()
-  }
+  async request(url: string, options: RequestOptions | null): Promise<string> {
+    const method = options?.method ?? http.RequestMethod.GET
+    const connectTimeout = options?.connectTimeout ?? 10000
+    const readTimeout = options?.readTimeout ?? 10000
 
-  async request<T>(url: string, options?: RequestOptions): Promise<T> {
     const defaultOptions: http.HttpRequestOptions = {
-      method: options?.method ?? http.RequestMethod.GET,
+      method: method,
       header: {
-        'Content-Type': 'application/json',
-        ...options?.headers
+        'Content-Type': 'application/json'
       },
-      extraData: options?.extraData,
-      connectTimeout: options?.connectTimeout ?? 10000,
-      readTimeout: options?.readTimeout ?? 10000
+      extraData: options?.extraData ?? '',
+      connectTimeout: connectTimeout,
+      readTimeout: readTimeout
     }
 
     try {
       const response = await this.httpRequest.request(url, defaultOptions)
       if (response.responseCode === http.ResponseCode.OK) {
-        const result = JSON.parse(response.result as string)
-        return result as T
+        return response.result as string
       } else {
         throw new Error(`HTTP Error: ${response.responseCode}`)
       }
@@ -48,16 +46,17 @@ class NetworkUtil {
     }
   }
 
-  async get<T>(url: string, options?: Omit<RequestOptions, 'method'>): Promise<T> {
-    return this.request<T>(url, { ...options, method: http.RequestMethod.GET })
+  async get(url: string): Promise<string> {
+    const options = new RequestOptions()
+    options.method = http.RequestMethod.GET
+    return this.request(url, options)
   }
 
-  async post<T>(url: string, data?: Object, options?: Omit<RequestOptions, 'method' | 'extraData'>): Promise<T> {
-    return this.request<T>(url, {
-      ...options,
-      method: http.RequestMethod.POST,
-      extraData: data ? JSON.stringify(data) : undefined
-    })
+  async post(url: string, data: string): Promise<string> {
+    const options = new RequestOptions()
+    options.method = http.RequestMethod.POST
+    options.extraData = data
+    return this.request(url, options)
   }
 
   destroy(): void {

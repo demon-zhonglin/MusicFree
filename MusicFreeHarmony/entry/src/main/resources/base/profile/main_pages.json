@@ -1,5 +1,12 @@
 {
   "src": [
-    "pages/Index"
+    "pages/Index",
+    "pages/Home",
+    "pages/MusicDetail",
+    "pages/Search",
+    "pages/Setting",
+    "pages/SheetDetail",
+    "pages/History",
+    "pages/PluginManager"
   ]
 }

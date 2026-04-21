@@ -1,16 +1,24 @@
 {
   "string": [
     {
+      "name": "app_name",
+      "value": "MusicFree"
+    },
+    {
       "name": "module_desc",
-      "value": "module description"
+      "value": "MusicFree 鸿蒙版 - 免费开源的音乐播放器"
     },
     {
       "name": "EntryAbility_desc",
-      "value": "description"
+      "value": "MusicFree 音乐播放"
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "MusicFree"
+    },
+    {
+      "name": "startup_desc",
+      "value": "MusicFree Startup"
     }
   ]
 }

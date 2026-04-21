@@ -15,7 +15,7 @@ class StorageUtil {
   async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
     if (!this.store) return defaultValue
     try {
-      const value = await this.store.get(key, defaultValue)
+      const value = await this.store.get(key, defaultValue as preferences.ValueType)
       return value as T
     } catch {
       return defaultValue

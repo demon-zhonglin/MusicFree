@@ -16,6 +16,7 @@
 
 ## 技术栈
 
+### React Native 版本 (Android)
 - **框架**: React Native 0.76.5 + React 18.3.1
 - **语言**: TypeScript
 - **状态管理**: Jotai
@@ -23,6 +24,15 @@
 - **音频播放**: react-native-track-player
 - **本地存储**: MMKV
 - **部分原生功能**: Expo
+
+### HarmonyOS 版本 (开发中)
+- **框架**: ArkUI (声明式 UI)
+- **语言**: ArkTS 5.0 (严格模式)
+- **状态管理**: @State/@Prop/@Link/@Observed
+- **导航**: Navigation + NavPathStack
+- **音频播放**: AVPlayer + AVSession
+- **本地存储**: Preferences + RDB
+- **后台任务**: BackgroundTaskManager
 
 ## 架构设计
 
@@ -367,6 +377,91 @@ TrackPlayer.playWithReplacePlayList(musicItem, musicList);
 TrackPlayer.add(musicItem);
 ```
 
+## HarmonyOS 版本开发指南
+
+### ArkTS 严格模式注意事项
+
+HarmonyOS 版本使用 **ArkTS 严格模式**，有以下限制：
+
+| 限制 | 说明 | 解决方案 |
+|------|------|----------|
+| 禁止 `Symbol()` | 不支持 Symbol API | 使用字符串常量 |
+| 禁止对象字面量类型 | `{ key: type }` 不能作为类型 | 定义显式 class |
+| 禁止 `interface` 实现 | 不推荐使用 interface | 使用 class 继承 |
+| 禁止 `Partial<T>` | 不支持工具类型 | 使用 `static fromJson()` 方法 |
+| 组件属性名冲突 | `size`/`padding` 等与内置方法冲突 | 重命名为 `iconSize`/`buttonPadding` |
+| emitter 事件 ID | 必须为数字类型 | 使用数字常量 |
+
+### HarmonyOS 项目结构
+
+```
+MusicFreeHarmony/
+├── entry/src/main/ets/
+│   ├── model/           # 数据模型 (MusicItem, MusicSheet, Plugin 等)
+│   ├── constants/       # 常量 (RouteConst + 路由参数类)
+│   ├── utils/           # 工具类 (StorageUtil, NetworkUtil)
+│   ├── service/         # 服务层 (PlaybackService, PluginEngine, MusicSheetService)
+│   ├── viewmodel/       # ViewModel (TrackPlayerVM, MusicSheetVM, PluginManagerVM)
+│   ├── components/
+│   │   ├── base/        # 基础组件 (AppBar, IconButton, MusicImage, Empty, Chip)
+│   │   └── music/       # 音乐组件 (MusicItemView, MusicList, MusicBar)
+│   └── pages/           # 页面 (Home, MusicDetail, Search, Setting 等)
+```
+
+### 关键代码模式
+
+**数据模型定义:**
+```typescript
+export class MediaBase {
+  id: string = ''
+  platform: string = ''
+}
+
+@Observed
+export class MusicItem extends MediaBase {
+  title: string = ''
+  artist: string = ''
+  // ...
+  
+  constructor() { super() }
+  
+  static fromJson(data: Record<string, Object>): MusicItem {
+    const item = new MusicItem()
+    item.id = data['id'] as string ?? ''
+    // ...
+    return item
+  }
+}
+```
+
+**事件系统:**
+```typescript
+export class PlaybackEvents {
+  static readonly STATE_CHANGED: number = 1001
+  static readonly TRACK_CHANGED: number = 1002
+}
+
+// 发送事件
+const innerEvent: emitter.InnerEvent = { eventId: PlaybackEvents.STATE_CHANGED }
+const eventData: emitter.EventData = { data: new Map([['state', state]]) }
+emitter.emit(innerEvent, eventData)
+```
+
+**路由导航:**
+```typescript
+export class SheetDetailRouteParam {
+  sheetId: string = ''
+  static create(sheetId: string): SheetDetailRouteParam {
+    const param = new SheetDetailRouteParam()
+    param.sheetId = sheetId
+    return param
+  }
+}
+
+// 使用
+navPathStack.pushPathByName('SheetDetail', SheetDetailRouteParam.create('123'))
+```
+
 ---
 
-*最后更新: 2026-04-20*
+*最后更新: 2026-04-21*

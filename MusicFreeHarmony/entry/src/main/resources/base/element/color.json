@@ -1,8 +1,68 @@
 {
   "color": [
     {
-      "name": "start_window_background",
+      "name": "primary",
+      "value": "#E91E63"
+    },
+    {
+      "name": "primary_dark",
+      "value": "#C2185B"
+    },
+    {
+      "name": "primary_light",
+      "value": "#F8BBD9"
+    },
+    {
+      "name": "secondary",
+      "value": "#9C27B0"
+    },
+    {
+      "name": "background",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "surface",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "text_primary",
+      "value": "#212121"
+    },
+    {
+      "name": "text_secondary",
+      "value": "#757575"
+    },
+    {
+      "name": "text_hint",
+      "value": "#BDBDBD"
+    },
+    {
+      "name": "text_disabled",
+      "value": "#9E9E9E"
+    },
+    {
+      "name": "divider",
+      "value": "#EEEEEE"
+    },
+    {
+      "name": "chip_background",
+      "value": "#F5F5F5"
+    },
+    {
+      "name": "disabled",
+      "value": "#E0E0E0"
+    },
+    {
+      "name": "error",
+      "value": "#F44336"
+    },
+    {
+      "name": "success",
+      "value": "#4CAF50"
+    },
+    {
+      "name": "warning",
+      "value": "#FF9800"
     }
   ]
 }

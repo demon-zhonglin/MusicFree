@@ -1,48 +1,79 @@
-import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
-
-const DOMAIN = 0x0000;
+import { UIAbility } from '@kit.AbilityKit'
+import { window } from '@kit.ArkUI'
+import { playbackService } from '../service/PlaybackService'
+import { pluginEngine } from '../service/PluginEngine'
+import { musicSheetService } from '../service/MusicSheetService'
+import { storageUtil } from '../utils/StorageUtil'
+import { getTrackPlayerVM } from '../viewmodel/TrackPlayerVM'
 
 export default class EntryAbility extends UIAbility {
-  onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    try {
-      this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
-    } catch (err) {
-      hilog.error(DOMAIN, 'testTag', 'Failed to set colorMode. Cause: %{public}s', JSON.stringify(err));
+  async onCreate(): Promise<void> {
+    console.info('EntryAbility onCreate')
+
+    // 初始化存储
+    await storageUtil.init(this.context)
+
+    // 初始化歌单服务
+    await musicSheetService.init(this.context)
+
+    // 初始化插件引擎
+    const sandboxPath = this.context.filesDir
+    await pluginEngine.init(sandboxPath)
+
+    // 初始化播放服务
+    await playbackService.init(this.context)
+  }
+
+  async onDestroy(): Promise<void> {
+    console.info('EntryAbility onDestroy')
+    
+    // 移除事件监听器
+    const playerVM = getTrackPlayerVM()
+    playerVM.teardownListeners()
+    
+    // 异步销毁服务（确保资源完全释放）
+    await playbackService.destroy()
+    await pluginEngine.destroy()
+    await musicSheetService.destroy()
+    
+    console.info('EntryAbility onDestroy completed')
+  }
+
+  async onWindowStageCreate(windowStage: window.WindowStage): Promise<void> {
+    console.info('EntryAbility onWindowStageCreate')
+
+    // 设置沉浸式状态栏
+    const mainWindow = await windowStage.getMainWindow()
+    await mainWindow.setWindowLayoutFullScreen(true)
+
+    // 设置状态栏透明
+    const systemBarProperties: window.SystemBarProperties = {
+      statusBarColor: '#00000000',
+      navigationBarColor: '#00000000',
+      statusBarContentColor: '#000000',
+      navigationBarContentColor: '#000000'
     }
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
-  }
+    await mainWindow.setWindowSystemBarProperties(systemBarProperties)
 
-  onDestroy(): void {
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
-  }
-
-  onWindowStageCreate(windowStage: window.WindowStage): void {
-    // Main window is created, set main page for this ability
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
-
-    windowStage.loadContent('pages/Index', (err) => {
+    // 加载首页
+    windowStage.loadContent('pages/Home', (err) => {
       if (err.code) {
-        hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err));
-        return;
+        console.error('Failed to load content:', JSON.stringify(err))
+        return
       }
-      hilog.info(DOMAIN, 'testTag', 'Succeeded in loading the content.');
-    });
+      console.info('Succeeded in loading content')
+    })
   }
 
   onWindowStageDestroy(): void {
-    // Main window is destroyed, release UI related resources
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageDestroy');
+    console.info('EntryAbility onWindowStageDestroy')
   }
 
   onForeground(): void {
-    // Ability has brought to foreground
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onForeground');
+    console.info('EntryAbility onForeground')
   }
 
   onBackground(): void {
-    // Ability has back to background
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onBackground');
+    console.info('EntryAbility onBackground')
   }
 }
