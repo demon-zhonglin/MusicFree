@@ -176,6 +176,8 @@ getSortedPlugins()
 
 ## 插件系统
 
+> 📖 **完整文档**: [PLUGIN_SYSTEM.md](./PLUGIN_SYSTEM.md) - 包含详细的架构设计、核心组件分析、生命周期流程和插件开发指南。
+
 ### 插件接口 (IPluginDefine)
 
 **文件**: `src/types/plugin.d.ts`
